@@ -50,7 +50,16 @@ if (Test-Path $settingsPath) {
     try {
         $settings = Get-Content $settingsPath -Raw | ConvertFrom-Json
     } catch {
-        Write-Error "Cannot parse $settingsPath as JSON. Fix it and re-run install."
+        Write-Error @"
+Cannot parse $settingsPath as strict JSON.
+The installer requires standard JSON — comments (// or /* */) and trailing commas
+are not supported. If your settings.json contains either, remove them and re-run.
+Original error: $($_.Exception.Message)
+"@
+        exit 1
+    }
+    if ($settings -isnot [PSCustomObject]) {
+        Write-Error "$settingsPath does not contain a JSON object at the top level. Aborting."
         exit 1
     }
 } else {
@@ -65,7 +74,11 @@ if ($settings.PSObject.Properties.Name -contains 'statusLine') {
     $settings | Add-Member -MemberType NoteProperty -Name 'statusLine' -Value $statusLine
 }
 
-$settings | ConvertTo-Json -Depth 20 | Set-Content $settingsPath -Encoding utf8 -Force
+# Write settings.json as UTF-8 *without* BOM. PowerShell 5.1's `Set-Content -Encoding utf8`
+# emits a BOM, which strict JSON parsers reject. Use the .NET API to write BOM-less UTF-8.
+$json = $settings | ConvertTo-Json -Depth 20
+$utf8NoBom = New-Object System.Text.UTF8Encoding $false
+[System.IO.File]::WriteAllText($settingsPath, $json, $utf8NoBom)
 Log "[ok] Updated $settingsPath"
 
 Log ''

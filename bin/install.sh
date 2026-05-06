@@ -60,11 +60,12 @@ DST="$CLAUDE_DIR/statusline.sh"
 cp "$SRC" "$DST"
 chmod +x "$DST"
 
-# Apply theme/style by rewriting top-of-file variables. Use awk for portability
-# (BSD vs GNU sed -i differ on macOS).
+# Apply theme/style by rewriting only the assigned value on the THEME/STYLE lines.
+# Using sub() (not full-line replace) preserves any trailing comments the user
+# may have added. awk is portable across BSD (mac) and GNU (linux) — sed -i is not.
 awk -v theme="$THEME" -v style="$STYLE" '
-    /^THEME=/ { print "THEME=\047" theme "\047"; next }
-    /^STYLE=/ { print "STYLE=\047" style "\047"; next }
+    /^THEME=/ { sub(/THEME=\047[^\047]*\047/, "THEME=\047" theme "\047"); print; next }
+    /^STYLE=/ { sub(/STYLE=\047[^\047]*\047/, "STYLE=\047" style "\047"); print; next }
     { print }
 ' "$DST" > "$DST.tmp" && mv "$DST.tmp" "$DST"
 chmod +x "$DST"
@@ -74,7 +75,11 @@ log "[ok] Copied statusline.sh -> $DST (theme=$THEME, style=$STYLE)"
 SETTINGS="$CLAUDE_DIR/settings.json"
 if [ -f "$SETTINGS" ]; then
     if ! jq empty "$SETTINGS" 2>/dev/null; then
-        echo "Error: $SETTINGS is malformed JSON. Fix it and re-run install." >&2
+        cat >&2 <<EOF
+Error: cannot parse $SETTINGS as strict JSON.
+The installer requires standard JSON — comments (// or /* */) and trailing commas
+are not supported. If your settings.json contains either, remove them and re-run.
+EOF
         exit 1
     fi
     jq --arg cmd "$DST" '.statusLine = {type: "command", command: $cmd}' "$SETTINGS" > "$SETTINGS.tmp" && mv "$SETTINGS.tmp" "$SETTINGS"

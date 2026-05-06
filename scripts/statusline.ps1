@@ -85,7 +85,8 @@ $line1 = @()
 $line1 += "${C_MODEL}${model}${RESET}"
 
 if ($data.session_name) {
-    $name = $data.session_name
+    # Strip control characters / ANSI escapes to prevent terminal injection
+    $name = $data.session_name -replace '[\x00-\x1F\x7F]', ''
     if ($name.Length -gt 40) { $name = $name.Substring(0, 37) + '...' }
     $line1 += "${C_SESSION}`"$name`"${RESET}"
 }
@@ -135,6 +136,11 @@ if ($durStr) {
 $sessionId    = $data.session_id
 $sessionCost  = $data.cost.total_cost_usd
 $currentModel = $model
+
+# Sanitize session_id — must be filename-safe (no path traversal)
+if ($sessionId -and $sessionId -notmatch '^[A-Za-z0-9_-]+$') {
+    $sessionId = $null
+}
 
 $trackerDir = "$env:USERPROFILE\.claude\cost-tracker"
 if (-not (Test-Path $trackerDir)) {

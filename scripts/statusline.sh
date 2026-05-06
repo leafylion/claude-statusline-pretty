@@ -93,6 +93,8 @@ format_duration() {
 line1="${C_MODEL}${model}${RESET}"
 
 if [ -n "$sessionName" ] && [ "$sessionName" != "null" ]; then
+    # Strip control characters / ANSI escapes to prevent terminal injection
+    sessionName=$(printf '%s' "$sessionName" | tr -d '\000-\037\177')
     if [ "${#sessionName}" -gt 40 ]; then
         sessionName="${sessionName:0:37}..."
     fi
@@ -141,17 +143,29 @@ fi
 trackerDir="$HOME/.claude/cost-tracker"
 mkdir -p "$trackerDir" 2>/dev/null || true
 
-# Migrate legacy single-file tracker if present
+# Migrate legacy single-file tracker if present.
+# jq emits one entry per line with key + value as JSON; we read the key safely
+# (filename-validated) and write the value through jq's --argjson.
 legacyPath="$HOME/.claude/cost-tracker.json"
 if [ -f "$legacyPath" ]; then
-    for key in $(jq -r 'keys[]' "$legacyPath" 2>/dev/null); do
+    while IFS= read -r entry; do
+        [ -z "$entry" ] && continue
+        key=$(printf '%s' "$entry" | jq -r '.key' 2>/dev/null)
+        case "$key" in
+            *[!A-Za-z0-9_-]*|"") continue ;;
+        esac
         perFile="$trackerDir/${key}.json"
         if [ ! -f "$perFile" ]; then
-            jq ".\"$key\"" "$legacyPath" > "$perFile" 2>/dev/null || true
+            printf '%s' "$entry" | jq '.value' > "$perFile" 2>/dev/null || true
         fi
-    done
+    done < <(jq -c 'to_entries[]' "$legacyPath" 2>/dev/null)
     rm -f "$legacyPath"
 fi
+
+# Sanitize session_id — must be filename-safe (no path traversal)
+case "$sessionId" in
+    *[!A-Za-z0-9_-]*|"") sessionId="" ;;
+esac
 
 if [ -n "$sessionId" ] && [ "$sessionId" != "null" ]; then
     ownPath="$trackerDir/${sessionId}.json"
@@ -161,7 +175,7 @@ if [ -n "$sessionId" ] && [ "$sessionId" != "null" ]; then
     else
         last_model="$model"
         last_cost=0
-        echo "{\"last_model\":\"$model\",\"last_cost\":0,\"model_costs\":{}}" > "$ownPath"
+        jq -n --arg m "$model" '{last_model: $m, last_cost: 0, model_costs: {}}' > "$ownPath"
     fi
 
     delta=$(awk -v c="$sessionCost" -v l="$last_cost" 'BEGIN { printf "%.10f", c - l }')
