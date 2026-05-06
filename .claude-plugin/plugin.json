@@ -1,0 +1,6 @@
+{
+  "name": "claude-statusline-pretty",
+  "description": "A pretty 2-line statusline showing model, dir, branch, context, cache hit, duration, and per-model cost tracking across sessions.",
+  "version": "0.1.0",
+  "author": "costiii"
+}
