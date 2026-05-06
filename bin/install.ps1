@@ -1,8 +1,15 @@
 # Installer for claude-statusline-pretty (Windows)
-# Copies the bundled statusline.ps1 to ~/.claude/ and patches ~/.claude/settings.json.
+# Copies the bundled statusline.ps1 to ~/.claude/, applies the chosen theme/style,
+# and patches ~/.claude/settings.json (preserves other keys).
 
 [CmdletBinding()]
-param([switch]$Quiet)
+param(
+    [ValidateSet('current','cool-pastel','earthy','neutral')]
+    [string]$Theme = 'cool-pastel',
+    [ValidateSet('minimal','sharp','soft')]
+    [string]$Style = 'minimal',
+    [switch]$Quiet
+)
 
 $ErrorActionPreference = 'Stop'
 
@@ -26,7 +33,13 @@ if (-not (Test-Path $claudeDir)) {
 # Copy script
 $dst = Join-Path $claudeDir 'statusline.ps1'
 Copy-Item $src $dst -Force
-Log "[ok] Copied statusline.ps1 -> $dst"
+
+# Apply chosen theme / style by rewriting the variable lines at the top
+$content = Get-Content $dst -Raw
+$content = $content -replace "(?m)^\s*\`$THEME\s*=\s*'[^']*'", "`$THEME = '$Theme'"
+$content = $content -replace "(?m)^\s*\`$STYLE\s*=\s*'[^']*'", "`$STYLE = '$Style'"
+Set-Content $dst $content -Encoding utf8 -Force
+Log "[ok] Copied statusline.ps1 -> $dst (theme=$Theme, style=$Style)"
 
 # Build the command line that settings.json will store
 $cmd = "powershell -NoProfile -NonInteractive -Command `"& '$dst'`""

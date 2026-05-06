@@ -55,19 +55,36 @@ If you don't want to use the plugin system, just run the installer directly afte
 .\bin\install.ps1
 ```
 
-## Themes
+## Themes & symbols
 
-Four context-color palettes are bundled. Switch by editing the top of `~/.claude/statusline.{ps1,sh}` after install:
+Both can be picked at install time, and changed later by re-running the installer or editing `~/.claude/statusline.{ps1,sh}`.
 
-```powershell
-$THEME = 'cool-pastel'   # default
-# alternatives: 'current' (gold), 'earthy' (tan), 'neutral' (gray)
-```
+**Color themes** (control the `context %` color gradient):
+| theme         | low (OK)        | mid (warn)    | high (>80%)     |
+|---------------|-----------------|---------------|-----------------|
+| `current`     | bright gold     | orange        | coral red       |
+| `cool-pastel` | soft teal       | peach         | dusty rose      | *(default)*
+| `earthy`      | tan             | terra cotta   | rose red        |
+| `neutral`     | light gray      | peach         | coral           |
+
+**Symbol styles** (dir · branch · separator glyphs):
+| style     | dir | branch | separator | feel                    |
+|-----------|-----|--------|-----------|-------------------------|
+| `minimal` | `›` | `⎇`    | `·`       | default, minimal        |
+| `sharp`   | `❯` | `⊢`    | `│`       | vertical-bar dev tool   |
+| `soft`    | `»` | `↳`    | `•`       | rounder shapes          |
+
+Pass to the installer:
 
 ```bash
-THEME='cool-pastel'      # default
-# alternatives: 'current', 'earthy', 'neutral'
+# Unix
+./bin/install.sh --theme cool-pastel --style minimal
+
+# Windows
+.\bin\install.ps1 -Theme cool-pastel -Style minimal
 ```
+
+Or via the skill — `/install-statusline` will ask you which to use.
 
 ## Files
 

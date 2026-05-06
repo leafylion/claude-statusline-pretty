@@ -8,6 +8,10 @@ $RESET = "$ESC[0m"
 # Change $THEME to one of: 'current', 'cool-pastel', 'earthy', 'neutral'
 $THEME = 'cool-pastel'
 
+# --- Symbol style picker ---
+# Change $STYLE to one of: 'minimal', 'sharp', 'soft'
+$STYLE = 'minimal'
+
 $THEMES = @{
     'current'     = @{ ok = 220; wn = 208; er = 203 }  # gold / orange / coral
     'cool-pastel' = @{ ok = 152; wn = 215; er = 174 }  # teal / peach / dusty rose
@@ -15,6 +19,13 @@ $THEMES = @{
     'neutral'     = @{ ok = 250; wn = 215; er = 203 }  # light gray / peach / coral
 }
 $picked = $THEMES[$THEME]; if (-not $picked) { $picked = $THEMES['current'] }
+
+$STYLES = @{
+    'minimal' = @{ dir = [char]0x203A; branch = [char]0x2387; sep = [char]0x00B7 }   # > -|- .
+    'sharp'   = @{ dir = [char]0x276F; branch = [char]0x22A2; sep = [char]0x2502 }   # > |- |
+    'soft'    = @{ dir = [char]0x00BB; branch = [char]0x21B3; sep = [char]0x2022 }   # >> -> *
+}
+$sym = $STYLES[$STYLE]; if (-not $sym) { $sym = $STYLES['minimal'] }
 
 # Color palette (256-color)
 $C_MODEL    = fg 183             # soft lilac
@@ -31,7 +42,7 @@ $C_COST     = fg 147             # lavender
 $C_TOTAL    = fg 219             # bright pink
 $C_SEP      = fg 238             # subtle gray
 
-$SEP_DOT = "${C_SEP}$([char]0x00B7)${RESET}"
+$SEP_DOT = "${C_SEP}$($sym.sep)${RESET}"
 $SEP     = " ${SEP_DOT} "
 
 function FormatDuration($ms) {
@@ -79,12 +90,12 @@ if ($data.session_name) {
     $line1 += "${C_SESSION}`"$name`"${RESET}"
 }
 
-if ($dirName) { $line1 += "${C_DIR}$([char]0x203A) $dirName${RESET}" }
+if ($dirName) { $line1 += "${C_DIR}$($sym.dir) $dirName${RESET}" }
 
 if ($dir) {
     $b = (git -C "$dir" --no-optional-locks branch --show-current 2>$null) | Select-Object -First 1
     if ($LASTEXITCODE -eq 0 -and $b) {
-        $line1 += "${C_BRANCH}$([char]0x2387) $b${RESET}"
+        $line1 += "${C_BRANCH}$($sym.branch) $b${RESET}"
     }
 }
 

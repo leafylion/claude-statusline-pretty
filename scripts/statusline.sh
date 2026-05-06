@@ -12,12 +12,23 @@ RESET="${ESC}[0m"
 # Change THEME to one of: 'current', 'cool-pastel', 'earthy', 'neutral'
 THEME='cool-pastel'
 
+# --- Symbol style picker ---
+# Change STYLE to one of: 'minimal', 'sharp', 'soft'
+STYLE='minimal'
+
 case "$THEME" in
     current)     CTX_OK=220; CTX_WN=208; CTX_ER=203 ;;  # gold / orange / coral
     cool-pastel) CTX_OK=152; CTX_WN=215; CTX_ER=174 ;;  # teal / peach / rose
     earthy)      CTX_OK=144; CTX_WN=173; CTX_ER=167 ;;  # tan / terra / red
     neutral)     CTX_OK=250; CTX_WN=215; CTX_ER=203 ;;  # gray / peach / coral
     *)           CTX_OK=152; CTX_WN=215; CTX_ER=174 ;;
+esac
+
+case "$STYLE" in
+    minimal) SYM_DIR='›'; SYM_BRANCH='⎇'; SYM_SEP='·' ;;
+    sharp)   SYM_DIR='❯'; SYM_BRANCH='⊢'; SYM_SEP='│' ;;
+    soft)    SYM_DIR='»'; SYM_BRANCH='↳'; SYM_SEP='•' ;;
+    *)       SYM_DIR='›'; SYM_BRANCH='⎇'; SYM_SEP='·' ;;
 esac
 
 C_MODEL=$(fg 183)
@@ -34,7 +45,7 @@ C_COST=$(fg 147)
 C_TOTAL=$(fg 219)
 C_SEP=$(fg 238)
 
-SEP_DOT="${C_SEP}·${RESET}"
+SEP_DOT="${C_SEP}${SYM_SEP}${RESET}"
 SEP=" ${SEP_DOT} "
 
 input=$(cat)
@@ -89,13 +100,13 @@ if [ -n "$sessionName" ] && [ "$sessionName" != "null" ]; then
 fi
 
 if [ -n "$dirName" ]; then
-    line1="${line1}${SEP}${C_DIR}› ${dirName}${RESET}"
+    line1="${line1}${SEP}${C_DIR}${SYM_DIR} ${dirName}${RESET}"
 fi
 
 if [ -n "$dir" ] && [ -d "$dir" ]; then
     branch=$(git -C "$dir" --no-optional-locks branch --show-current 2>/dev/null || true)
     if [ -n "$branch" ]; then
-        line1="${line1}${SEP}${C_BRANCH}⎇ ${branch}${RESET}"
+        line1="${line1}${SEP}${C_BRANCH}${SYM_BRANCH} ${branch}${RESET}"
     fi
 fi
 

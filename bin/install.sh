@@ -1,11 +1,36 @@
 #!/usr/bin/env bash
 # Installer for claude-statusline-pretty (macOS / Linux).
-# Copies the bundled statusline.sh to ~/.claude/ and patches ~/.claude/settings.json.
+# Copies the bundled statusline.sh to ~/.claude/, applies the chosen theme/style,
+# and patches ~/.claude/settings.json (preserves other keys).
 
 set -euo pipefail
 
+THEME='cool-pastel'
+STYLE='minimal'
 QUIET=""
-[ "${1:-}" = "--quiet" ] && QUIET=1
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --theme) THEME="${2:-}"; shift 2 ;;
+        --style) STYLE="${2:-}"; shift 2 ;;
+        --quiet) QUIET=1; shift ;;
+        --help|-h)
+            echo "Usage: install.sh [--theme <current|cool-pastel|earthy|neutral>] [--style <minimal|sharp|soft>] [--quiet]"
+            exit 0 ;;
+        *) echo "Unknown option: $1" >&2; exit 1 ;;
+    esac
+done
+
+case "$THEME" in
+    current|cool-pastel|earthy|neutral) ;;
+    *) echo "Invalid theme: $THEME (valid: current, cool-pastel, earthy, neutral)" >&2; exit 1 ;;
+esac
+
+case "$STYLE" in
+    minimal|sharp|soft) ;;
+    *) echo "Invalid style: $STYLE (valid: minimal, sharp, soft)" >&2; exit 1 ;;
+esac
+
 log() { [ -n "$QUIET" ] || echo "$@"; }
 
 # Locate plugin root (parent of bin/)
@@ -34,7 +59,16 @@ mkdir -p "$CLAUDE_DIR"
 DST="$CLAUDE_DIR/statusline.sh"
 cp "$SRC" "$DST"
 chmod +x "$DST"
-log "[ok] Copied statusline.sh -> $DST"
+
+# Apply theme/style by rewriting top-of-file variables. Use awk for portability
+# (BSD vs GNU sed -i differ on macOS).
+awk -v theme="$THEME" -v style="$STYLE" '
+    /^THEME=/ { print "THEME=\047" theme "\047"; next }
+    /^STYLE=/ { print "STYLE=\047" style "\047"; next }
+    { print }
+' "$DST" > "$DST.tmp" && mv "$DST.tmp" "$DST"
+chmod +x "$DST"
+log "[ok] Copied statusline.sh -> $DST (theme=$THEME, style=$STYLE)"
 
 # Patch settings.json
 SETTINGS="$CLAUDE_DIR/settings.json"
