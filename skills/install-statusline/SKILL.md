@@ -1,53 +1,36 @@
 ---
 name: install-statusline
-description: Install the pretty statusline by copying the bundled script to ~/.claude/ and patching ~/.claude/settings.json. Use when the user runs /install-statusline or asks to install/enable the statusline plugin.
+description: Install the claude-statusline-pretty bundled script and patch ~/.claude/settings.json. Use when the user runs /install-statusline or asks to install/enable the statusline plugin.
 ---
 
 # Install statusline
 
-This skill installs the pretty statusline shipped with this plugin.
+This skill runs the bundled installer. The installer is deterministic — it copies the script, patches `settings.json` (preserving other keys), creates `~/.claude/settings.json` if it doesn't exist, and aborts on malformed settings without overwriting.
 
 ## Steps
 
-1. **Detect the OS** — check `process.platform` (or `$env:OS` / `uname`):
-   - Windows → use `statusline.ps1`
-   - macOS / Linux → use `statusline.sh`
+1. **Detect OS** and run the matching command. Claude Code automatically adds the plugin's `bin/` directory to `PATH`, so call by name:
 
-2. **Locate the bundled script** — it lives in this plugin under `scripts/`. The plugin directory is available via the `${CLAUDE_PLUGIN_ROOT}` environment variable when the skill runs, so the source path is:
-   - Windows: `${CLAUDE_PLUGIN_ROOT}/scripts/statusline.ps1`
-   - Unix:    `${CLAUDE_PLUGIN_ROOT}/scripts/statusline.sh`
+   - **Windows** (PowerShell): `install.ps1`
+   - **macOS / Linux**: `install.sh`
 
-3. **Copy the script** to `~/.claude/`:
-   - Windows target: `$env:USERPROFILE\.claude\statusline.ps1`
-   - Unix target:    `$HOME/.claude/statusline.sh` — and `chmod +x` it
+2. **Show the installer's output to the user** verbatim — it lists exactly which files were touched.
 
-4. **Patch `~/.claude/settings.json`** — read the existing JSON (create `{}` if missing), then add or overwrite the `statusLine` key:
+3. **Tell the user to restart Claude Code.** The statusline command in `settings.json` is read at startup; it won't take effect in the current session.
 
-   **Windows:**
-   ```json
-   "statusLine": {
-     "type": "command",
-     "command": "powershell -NoProfile -NonInteractive -Command \"& 'C:\\Users\\<USERNAME>\\.claude\\statusline.ps1'\""
-   }
-   ```
-   Substitute `<USERNAME>` with the actual Windows username at install time (read from `$env:USERNAME`).
+## Prerequisites
 
-   **macOS / Linux:**
-   ```json
-   "statusLine": {
-     "type": "command",
-     "command": "$HOME/.claude/statusline.sh"
-   }
-   ```
+- **macOS / Linux**: `jq` must be installed. The installer aborts with installation hints (`brew install jq` / `apt install jq` / `dnf install jq`) if missing.
+- **Windows**: PowerShell 5.1+ (built-in, no extra deps).
 
-5. **Check dependencies:**
-   - On macOS / Linux: warn if `jq` is not on `$PATH`. Suggest `brew install jq` (mac) or the appropriate package manager (linux).
-   - On Windows: PowerShell 5.1+ is built-in, no extra deps.
+## What the installer does
 
-6. **Confirm** with the user that the install succeeded and remind them to start a new Claude Code session to see the statusline.
+- Copies `<plugin>/scripts/statusline.{ps1,sh}` to `~/.claude/`
+- Adds or replaces the `statusLine` key in `~/.claude/settings.json` (other keys preserved)
+- On Unix: marks the script executable
 
-## Notes
+## What it does NOT do
 
-- Preserve any other keys in `settings.json` — only the `statusLine` key should be replaced.
-- If `settings.json` has malformed JSON, abort and tell the user instead of overwriting it.
-- The cost tracker lives at `~/.claude/cost-tracker/` and is created automatically on first run; nothing to install for it.
+- Does not install `jq` for you (auto-install across distros is brittle)
+- Does not modify any other settings keys
+- Does not create the `cost-tracker/` directory — the statusline script does that on first run
