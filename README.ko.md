@@ -66,14 +66,15 @@ effort:high · context 4% · cache 99% · 6m 56s · Sonnet $0.47 · Opus $0.12 �
 
 설치 시점에 선택할 수 있고, 나중에 설치 스크립트를 다시 돌리거나 `~/.claude/statusline.{ps1,sh}` 상단의 변수를 직접 고쳐도 됩니다.
 
-**색상 테마** (컨텍스트 % 표시 색상의 그라데이션):
+**색상 테마** — 각 테마는 *13색 풀 팔레트*입니다. 테마를 바꾸면 컨텍스트 % 만이 아니라 라인 전체 색이 바뀝니다.
 
-| 테마          | 낮음 (OK)    | 중간 (warn)  | 높음 (>80%)   |
-|---------------|--------------|--------------|----------------|
-| `current`     | 밝은 골드    | 오렌지       | 코랄 레드      |
-| `cool-pastel` | 은은한 청록  | 피치         | 더스티 로즈    | *(기본값)*
-| `earthy`      | 탠           | 테라코타     | 로즈 레드      |
-| `neutral`     | 라이트 그레이| 피치         | 코랄           |
+| 테마          | 분위기                                              |
+|---------------|------------------------------------------------------|
+| `current`     | 밝은 사이안/그린/마젠타 — 시끄럽고 클래식          |
+| `cool-pastel` | 라일락/스카이블루/민트/라벤더 — 차분한 쿨톤        |
+| `earthy`      | 베이지/세이지/올리브/러스트/로즈 — 따뜻한 흙색     |
+| `neutral`     | 거의 회색 톤, 컨텍스트 경고일 때만 색상 등장      |
+| `custom`      | 나만의 팔레트 — 아래 섹션 참고                     |
 
 **기호 스타일** (디렉터리 · 브랜치 · 구분자 글리프):
 
@@ -95,6 +96,24 @@ effort:high · context 4% · cache 99% · 6m 56s · Sonnet $0.47 · Opus $0.12 �
 
 스킬을 통한 설치(`/install-statusline`)에서는 대화형으로 물어봅니다.
 
+### 커스텀 팔레트
+
+테마를 `custom`으로 고르면 `~/.claude/statusline-theme.json`을 읽어서 사용합니다 — 모든 13개 요소 색을 이 파일에서 가져옵니다:
+
+```json
+{
+  "model": 183, "session": 247, "dir": 81, "branch": 121, "effort": 117,
+  "ctx_ok": 152, "ctx_wn": 215, "ctx_er": 174,
+  "cache": 80, "duration": 244, "cost": 147, "total": 219, "sep": 238
+}
+```
+
+13개 키 모두 필수, 값은 [256-color](https://www.ditig.com/256-colors-cheat-sheet) 번호(0–255). 파일이 없거나 형식이 깨지면 자동으로 `cool-pastel` 로 폴백.
+
+설치 스크립트가 `--theme custom`(또는 `-Theme custom`)으로 실행될 때 `~/.claude/statusline-theme.json` 이 없으면 `examples/themes/cool-pastel.json` 을 시드 파일로 복사해 줍니다 — 한 파일만 편집하면 됩니다.
+
+시작점으로 쓰기 좋은 미리 만들어둔 팔레트: [`examples/themes/`](examples/themes/) 에 4개 (`current.json`, `cool-pastel.json`, `earthy.json`, `neutral.json`) 있음.
+
 ## 파일 구조
 
 ```
@@ -104,6 +123,7 @@ bin/install.sh                   # macOS / Linux 설치 스크립트
 scripts/statusline.ps1           # Windows 상태표시줄
 scripts/statusline.sh            # macOS / Linux 상태표시줄
 skills/install-statusline/       # /install-statusline 스킬
+examples/themes/                 # custom 팔레트 시작용 JSON 파일들
 ```
 
 설치 후 첫 실행 시점에 `~/.claude/cost-tracker/` 디렉터리가 자동으로 생성됩니다 (세션별 비용 데이터가 여기 저장됨).

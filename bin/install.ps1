@@ -4,7 +4,7 @@
 
 [CmdletBinding()]
 param(
-    [ValidateSet('current','cool-pastel','earthy','neutral')]
+    [ValidateSet('current','cool-pastel','earthy','neutral','custom')]
     [string]$Theme = 'cool-pastel',
     [ValidateSet('minimal','sharp','soft')]
     [string]$Style = 'minimal',
@@ -40,6 +40,21 @@ $content = $content -replace "(?m)^\s*\`$THEME\s*=\s*'[^']*'", "`$THEME = '$Them
 $content = $content -replace "(?m)^\s*\`$STYLE\s*=\s*'[^']*'", "`$STYLE = '$Style'"
 Set-Content $dst $content -Encoding utf8 -Force
 Log "[ok] Copied statusline.ps1 -> $dst (theme=$Theme, style=$Style)"
+
+# When theme=custom, seed ~/.claude/statusline-theme.json from the bundled cool-pastel
+# example if the user doesn't already have one. The script reads this at runtime.
+if ($Theme -eq 'custom') {
+    $themeJsonDst = Join-Path $claudeDir 'statusline-theme.json'
+    if (-not (Test-Path $themeJsonDst)) {
+        $exampleSrc = Join-Path $pluginRoot 'examples\themes\cool-pastel.json'
+        if (Test-Path $exampleSrc) {
+            Copy-Item $exampleSrc $themeJsonDst -Force
+            Log "[ok] Seeded $themeJsonDst from cool-pastel example — edit to customize."
+        }
+    } else {
+        Log "[ok] Existing $themeJsonDst left unchanged."
+    }
+}
 
 # Build the command line that settings.json will store
 $cmd = "powershell -NoProfile -NonInteractive -Command `"& '$dst'`""

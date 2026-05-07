@@ -15,15 +15,15 @@ while [ $# -gt 0 ]; do
         --style) STYLE="${2:-}"; shift 2 ;;
         --quiet) QUIET=1; shift ;;
         --help|-h)
-            echo "Usage: install.sh [--theme <current|cool-pastel|earthy|neutral>] [--style <minimal|sharp|soft>] [--quiet]"
+            echo "Usage: install.sh [--theme <current|cool-pastel|earthy|neutral|custom>] [--style <minimal|sharp|soft>] [--quiet]"
             exit 0 ;;
         *) echo "Unknown option: $1" >&2; exit 1 ;;
     esac
 done
 
 case "$THEME" in
-    current|cool-pastel|earthy|neutral) ;;
-    *) echo "Invalid theme: $THEME (valid: current, cool-pastel, earthy, neutral)" >&2; exit 1 ;;
+    current|cool-pastel|earthy|neutral|custom) ;;
+    *) echo "Invalid theme: $THEME (valid: current, cool-pastel, earthy, neutral, custom)" >&2; exit 1 ;;
 esac
 
 case "$STYLE" in
@@ -70,6 +70,19 @@ awk -v theme="$THEME" -v style="$STYLE" '
 ' "$DST" > "$DST.tmp" && mv "$DST.tmp" "$DST"
 chmod +x "$DST"
 log "[ok] Copied statusline.sh -> $DST (theme=$THEME, style=$STYLE)"
+
+# When theme=custom, seed ~/.claude/statusline-theme.json from the cool-pastel example
+# if the user doesn't already have one. The script reads this at runtime.
+if [ "$THEME" = "custom" ]; then
+    THEME_JSON="$CLAUDE_DIR/statusline-theme.json"
+    EXAMPLE="$PLUGIN_ROOT/examples/themes/cool-pastel.json"
+    if [ -f "$THEME_JSON" ]; then
+        log "[ok] Existing $THEME_JSON left unchanged."
+    elif [ -f "$EXAMPLE" ]; then
+        cp "$EXAMPLE" "$THEME_JSON"
+        log "[ok] Seeded $THEME_JSON from cool-pastel example — edit to customize."
+    fi
+fi
 
 # Patch settings.json
 SETTINGS="$CLAUDE_DIR/settings.json"

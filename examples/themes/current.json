@@ -1,0 +1,15 @@
+{
+  "model": 51,
+  "session": 247,
+  "dir": 39,
+  "branch": 46,
+  "effort": 220,
+  "ctx_ok": 220,
+  "ctx_wn": 208,
+  "ctx_er": 203,
+  "cache": 82,
+  "duration": 244,
+  "cost": 207,
+  "total": 197,
+  "sep": 238
+}

@@ -59,15 +59,18 @@ If you don't want to use the plugin system, just run the installer directly afte
 
 Both can be picked at install time, and changed later by re-running the installer or editing `~/.claude/statusline.{ps1,sh}`.
 
-**Color themes** (control the `context %` color gradient):
-| theme         | low (OK)        | mid (warn)    | high (>80%)     |
-|---------------|-----------------|---------------|-----------------|
-| `current`     | bright gold     | orange        | coral red       |
-| `cool-pastel` | soft teal       | peach         | dusty rose      | *(default)*
-| `earthy`      | tan             | terra cotta   | rose red        |
-| `neutral`     | light gray      | peach         | coral           |
+**Color themes** — each theme is a *full 13-color palette*; switching themes recolors the whole line, not just the context segment.
+
+| theme         | feel                                              |
+|---------------|---------------------------------------------------|
+| `current`     | bright cyan / green / magenta — loud and classic  |
+| `cool-pastel` | lilac / sky-blue / mint / lavender — calm cool    |
+| `earthy`      | beige / sage / olive / rust / rose — warm, muted  |
+| `neutral`     | grayscale; only context warnings show color       |
+| `custom`      | your own palette — see below                      |
 
 **Symbol styles** (dir · branch · separator glyphs):
+
 | style     | dir | branch | separator | feel                    |
 |-----------|-----|--------|-----------|-------------------------|
 | `minimal` | `›` | `⎇`    | `·`       | default, minimal        |
@@ -86,6 +89,24 @@ Pass to the installer:
 
 Or via the skill — `/install-statusline` will ask you which to use.
 
+### Custom palettes
+
+Pick `custom` as your theme to use your own colors. The script reads `~/.claude/statusline-theme.json` at runtime — every element gets its color from this file:
+
+```json
+{
+  "model": 183, "session": 247, "dir": 81, "branch": 121, "effort": 117,
+  "ctx_ok": 152, "ctx_wn": 215, "ctx_er": 174,
+  "cache": 80, "duration": 244, "cost": 147, "total": 219, "sep": 238
+}
+```
+
+All 13 keys are required. Each value is a [256-color](https://www.ditig.com/256-colors-cheat-sheet) number (0–255). If the file is missing or malformed, the script silently falls back to `cool-pastel`.
+
+The installer seeds `~/.claude/statusline-theme.json` from `examples/themes/cool-pastel.json` when you pick `custom` and don't already have one — so you can run `--theme custom` and then edit one file.
+
+Pre-made palettes you can copy as a starting point: see [`examples/themes/`](examples/themes/) (`current.json`, `cool-pastel.json`, `earthy.json`, `neutral.json`).
+
 ## Files
 
 ```
@@ -95,6 +116,7 @@ bin/install.sh                   # macOS / Linux installer
 scripts/statusline.ps1           # Windows statusline
 scripts/statusline.sh            # macOS / Linux statusline
 skills/install-statusline/       # /install-statusline command
+examples/themes/                 # JSON starters for custom palettes
 ```
 
 After install, the statusline auto-creates `~/.claude/cost-tracker/` on first run for per-session cost data.

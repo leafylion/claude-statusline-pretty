@@ -5,7 +5,8 @@ function fg($n) { "$ESC[38;5;${n}m" }
 $RESET = "$ESC[0m"
 
 # --- Theme picker ---
-# Change $THEME to one of: 'current', 'cool-pastel', 'earthy', 'neutral'
+# Change $THEME to one of: 'current', 'cool-pastel', 'earthy', 'neutral', 'custom'
+# When set to 'custom', the script reads ~/.claude/statusline-theme.json for a 13-color palette.
 $THEME = 'neutral'
 
 # --- Symbol style picker ---
@@ -13,12 +14,50 @@ $THEME = 'neutral'
 $STYLE = 'minimal'
 
 $THEMES = @{
-    'current'     = @{ ok = 220; wn = 208; er = 203 }  # gold / orange / coral
-    'cool-pastel' = @{ ok = 152; wn = 215; er = 174 }  # teal / peach / dusty rose
-    'earthy'      = @{ ok = 144; wn = 173; er = 167 }  # tan / terra cotta / rose red
-    'neutral'     = @{ ok = 250; wn = 215; er = 203 }  # light gray / peach / coral
+    'current' = @{
+        model=51; session=247; dir=39; branch=46; effort=220
+        ctx_ok=220; ctx_wn=208; ctx_er=203
+        cache=82; duration=244; cost=207; total=197; sep=238
+    }
+    'cool-pastel' = @{
+        model=183; session=247; dir=81; branch=121; effort=117
+        ctx_ok=152; ctx_wn=215; ctx_er=174
+        cache=80; duration=244; cost=147; total=219; sep=238
+    }
+    'earthy' = @{
+        model=222; session=138; dir=108; branch=107; effort=179
+        ctx_ok=144; ctx_wn=173; ctx_er=167
+        cache=137; duration=242; cost=178; total=168; sep=238
+    }
+    'neutral' = @{
+        model=254; session=245; dir=250; branch=248; effort=244
+        ctx_ok=248; ctx_wn=215; ctx_er=203
+        cache=250; duration=240; cost=246; total=252; sep=238
+    }
 }
-$picked = $THEMES[$THEME]; if (-not $picked) { $picked = $THEMES['current'] }
+
+$REQUIRED_KEYS = 'model','session','dir','branch','effort','ctx_ok','ctx_wn','ctx_er','cache','duration','cost','total','sep'
+
+if ($THEME -eq 'custom') {
+    $picked = $null
+    $customPath = Join-Path $env:USERPROFILE '.claude\statusline-theme.json'
+    if (Test-Path $customPath) {
+        try {
+            $j = Get-Content $customPath -Raw | ConvertFrom-Json
+            $tmp = @{}
+            $ok = $true
+            foreach ($k in $REQUIRED_KEYS) {
+                if ($null -ne $j.$k) { $tmp[$k] = [int]$j.$k }
+                else { $ok = $false; break }
+            }
+            if ($ok) { $picked = $tmp }
+        } catch {}
+    }
+    if (-not $picked) { $picked = $THEMES['cool-pastel'] }
+} else {
+    $picked = $THEMES[$THEME]
+    if (-not $picked) { $picked = $THEMES['cool-pastel'] }
+}
 
 $STYLES = @{
     'minimal' = @{ dir = [char]0x203A; branch = [char]0x2387; sep = [char]0x00B7 }   # > -|- .
@@ -27,20 +66,20 @@ $STYLES = @{
 }
 $sym = $STYLES[$STYLE]; if (-not $sym) { $sym = $STYLES['minimal'] }
 
-# Color palette (256-color)
-$C_MODEL    = fg 183             # soft lilac
-$C_SESSION  = fg 247             # light gray
-$C_DIR      = fg 81              # sky blue
-$C_BRANCH   = fg 121             # mint green
-$C_EFFORT   = fg 117             # light blue
-$C_CTX_OK   = fg $picked.ok
-$C_CTX_WN   = fg $picked.wn
-$C_CTX_ER   = fg $picked.er
-$C_CACHE    = fg 180             # soft amber
-$C_DURATION = fg 244             # mid gray
-$C_COST     = fg 147             # lavender
-$C_TOTAL    = fg 219             # bright pink
-$C_SEP      = fg 238             # subtle gray
+# Color palette (256-color, fully driven by chosen theme)
+$C_MODEL    = fg $picked.model
+$C_SESSION  = fg $picked.session
+$C_DIR      = fg $picked.dir
+$C_BRANCH   = fg $picked.branch
+$C_EFFORT   = fg $picked.effort
+$C_CTX_OK   = fg $picked.ctx_ok
+$C_CTX_WN   = fg $picked.ctx_wn
+$C_CTX_ER   = fg $picked.ctx_er
+$C_CACHE    = fg $picked.cache
+$C_DURATION = fg $picked.duration
+$C_COST     = fg $picked.cost
+$C_TOTAL    = fg $picked.total
+$C_SEP      = fg $picked.sep
 
 $SEP_DOT = "${C_SEP}$($sym.sep)${RESET}"
 $SEP     = " ${SEP_DOT} "

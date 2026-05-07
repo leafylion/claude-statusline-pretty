@@ -13,11 +13,12 @@ This skill prompts the user for a color theme and symbol style, then runs the bu
 
 Present the two choices below. **Defaults are `cool-pastel` + `minimal`** — if the user says "just defaults" or doesn't specify, use those without further prompting.
 
-**Color theme** (controls how the `context %` segment is colored as the window fills):
-- `current`     — bright gold → orange → coral (loud)
-- `cool-pastel` — soft teal → peach → dusty rose (default, calm cool palette)
-- `earthy`      — tan → terra cotta → rose red (warm but muted)
-- `neutral`     — light gray → peach → coral (gray at low %, only "lights up" when filling)
+**Color theme** (controls the *full palette* — every element on the line gets its color from the theme):
+- `current`     — bright cyan/green/magenta (loud, classic terminal)
+- `cool-pastel` — lilac/sky-blue/mint/lavender (default, calm cool palette)
+- `earthy`      — beige/sage/olive/rust/rose (warm, muted earth tones)
+- `neutral`     — mostly grayscale; warning colors only show on context pressure
+- `custom`      — read a 13-color palette from `~/.claude/statusline-theme.json` at runtime (script seeds a starter file from `cool-pastel` if missing)
 
 **Symbol style** (controls dir / branch / separator glyphs):
 - `minimal` — `›` dir · `⎇` branch · `·` separator (default, minimal punctuation)
@@ -54,6 +55,7 @@ Show the installer's output to the user verbatim — it lists exactly which file
 - Rewrites the `THEME` and `STYLE` variables at the top of the copied script to the chosen values
 - Adds or replaces the `statusLine` key in `~/.claude/settings.json` (other keys preserved)
 - On Unix: marks the script executable
+- If `--theme custom` and `~/.claude/statusline-theme.json` doesn't already exist, seeds it from the bundled `cool-pastel` example so the user has a file to edit
 
 ## What it does NOT do
 
