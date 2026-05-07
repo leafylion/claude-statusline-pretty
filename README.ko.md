@@ -34,12 +34,15 @@ effort:high · context 4% · cache 99% · 6m 56s · Sonnet $0.47 · Opus $0.12 �
 ```text
 /plugin marketplace add leafylion/claude-statusline-pretty
 /plugin install claude-statusline-pretty
-/install-statusline
+/reload-plugins
+/claude-statusline-pretty:install-statusline
 ```
 
-설치 후 **Claude Code를 재시작**하세요. `settings.json`은 시작 시점에 한 번 읽기 때문에, 재시작이 있어야 새 상태표시줄이 적용됩니다.
+`/reload-plugins` 는 `install` 직후 새 스킬을 Claude Code 가 인식하게 해주는 단계. 스킬은 플러그인 이름으로 namespace 가 붙어서 `/claude-statusline-pretty:install-statusline` 형태로 호출됩니다 (탭 자동완성 됨).
 
-`/install-statusline` 실행 시 색상 테마와 기호 스타일을 물어봅니다. 그냥 기본값을 원하면 "기본"이라고 답하면 됩니다.
+인스톨러가 끝나면 **Claude Code를 재시작**하세요. `settings.json` 은 시작 시점에 한 번 읽기 때문에, 재시작이 있어야 새 상태표시줄이 적용됩니다.
+
+설치 시 색상 테마와 기호 스타일을 물어봅니다. 그냥 기본값을 원하면 "기본"이라고 답하면 됩니다.
 
 ### 설치 스크립트가 하는 일
 

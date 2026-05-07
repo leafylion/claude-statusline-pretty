@@ -30,10 +30,13 @@ effort:high · context 4% · cache 99% · 6m 56s · Sonnet $0.47 · Opus $0.12 �
 ```text
 /plugin marketplace add leafylion/claude-statusline-pretty
 /plugin install claude-statusline-pretty
-/install-statusline
+/reload-plugins
+/claude-statusline-pretty:install-statusline
 ```
 
-Then **restart Claude Code**. The statusline command is read from `settings.json` at startup, so a restart is required for the first activation.
+`/reload-plugins` is needed after `install` so Claude Code picks up the bundled skill. The skill is namespaced — use the full `/claude-statusline-pretty:install-statusline` form (Claude Code's tab-completion will help).
+
+After the installer finishes, **restart Claude Code**. The statusline command is read from `settings.json` at startup, so a restart is required for the first activation.
 
 ### What the installer does
 
