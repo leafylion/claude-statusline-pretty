@@ -1,0 +1,29 @@
+{
+  "name": "claude-statusline-pretty",
+  "owner": {
+    "name": "leafylion",
+    "email": ""
+  },
+  "metadata": {
+    "description": "Pretty 2-line statusline for Claude Code with per-model cost tracking, theme picker, and custom palette support.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "claude-statusline-pretty",
+      "source": "./",
+      "description": "2-line statusline showing model, dir, branch, context %, cache hit %, session duration, and per-model cost. Persistent cost tracking across sessions, race-free for concurrent windows. PowerShell on Windows, Bash + jq on macOS / Linux. Bundled themes plus a JSON-driven custom palette.",
+      "category": "monitoring",
+      "tags": [
+        "statusline",
+        "cost-tracking",
+        "monitoring",
+        "themes",
+        "windows",
+        "macos",
+        "linux"
+      ]
+    }
+  ],
+  "version": "0.1.0"
+}
