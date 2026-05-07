@@ -11,7 +11,7 @@ RESET="${ESC}[0m"
 # --- Theme picker ---
 # Change THEME to one of: 'current', 'cool-pastel', 'earthy', 'neutral', 'custom'
 # When set to 'custom', the script reads ~/.claude/statusline-theme.json for a 13-color palette.
-THEME='earthy'
+THEME='cool-pastel'
 
 # --- Symbol style picker ---
 # Change STYLE to one of: 'minimal', 'sharp', 'soft'
