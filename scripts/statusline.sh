@@ -10,7 +10,7 @@ RESET="${ESC}[0m"
 
 # --- Theme picker ---
 # Change THEME to one of: 'current', 'cool-pastel', 'earthy', 'neutral'
-THEME='cool-pastel'
+THEME='neutral'
 
 # --- Symbol style picker ---
 # Change STYLE to one of: 'minimal', 'sharp', 'soft'
