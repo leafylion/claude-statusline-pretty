@@ -1,6 +1,6 @@
 # claude-statusline-pretty
 
-[Claude Code](https://claude.com/claude-code)용 2줄 상태표시줄 플러그인 — 모델별 누적 비용 추적 기능 포함.
+[Claude Code](https://claude.com/claude-code)용 2줄 상태표시줄 플러그인 — [ccusage](https://github.com/ryoppippi/ccusage) 기반 월별 비용 추적 기능 포함.
 
 🌐 [English](README.md) · 한국어
 
@@ -8,17 +8,16 @@
 
 ```
 Sonnet 4.6 · "Customize statusline icons" · › myproject · ⎇ main
-effort:high · context 4% · cache 99% · 6m 56s · Sonnet $0.47 · Opus $0.12 · $0.59 total
+effort:high · context 4% · cache 99% · 6m 56s · month $42.18
 ```
 
 **1줄** — 모델 · 세션명 · 디렉터리 · git 브랜치
-**2줄** — effort 단계 · 컨텍스트 % · 캐시 적중률 · 세션 진행시간 · 모델별 비용 · 총합
+**2줄** — effort 단계 · 컨텍스트 % · 캐시 적중률 · 세션 진행시간 · 이번 달 누적 비용
 
 ## 주요 기능
 
 - **컨텍스트 % 색상 변화** — 사용량이 늘어날수록 색이 점점 강해짐 (테마 4종 내장)
-- **모델별 비용 추적** — 세션 중간에 모델을 바꿔도 Sonnet/Opus 각각의 사용 금액을 따로 집계
-- **세션 간 누적** — `~/.claude/cost-tracker/<session_id>.json` 단위로 저장, 동시에 여러 창을 열어도 충돌 없음
+- **월별 비용 합산** — 이번 달 이 머신의 모든 Claude Code 트랜스크립트 기준 API 환산 비용을 `ccusage`로 집계 (선택 의존성)
 - **크로스 플랫폼** — Windows는 PowerShell, macOS/Linux는 Bash + jq
 
 ## 설치
@@ -28,6 +27,7 @@ effort:high · context 4% · cache 99% · 6m 56s · Sonnet $0.47 · Opus $0.12 �
 - **Windows:** PowerShell 5.1+ (기본 내장)
 - **macOS:** `jq` — `brew install jq`
 - **Linux:** `jq` — `sudo apt install jq` (Debian/Ubuntu) 또는 `sudo dnf install jq` (Fedora)
+- **선택 (전 플랫폼):** [`ccusage`](https://github.com/ryoppippi/ccusage) — `month $X.XX` 표시에 필요. `npm i -g ccusage`. PATH에 없으면 해당 요소만 조용히 빠짐.
 
 ### 설치 절차
 
@@ -129,11 +129,9 @@ skills/install-statusline/       # /install-statusline 스킬
 examples/themes/                 # custom 팔레트 시작용 JSON 파일들
 ```
 
-설치 후 첫 실행 시점에 `~/.claude/cost-tracker/` 디렉터리가 자동으로 생성됩니다 (세션별 비용 데이터가 여기 저장됨).
-
 ## 제거
 
-`~/.claude/settings.json`에서 `statusLine` 키를 지우고, `~/.claude/statusline.{ps1,sh}` 파일도 삭제하면 됩니다. (선택) 지금까지의 비용 기록도 지우고 싶으면 `~/.claude/cost-tracker/`도 삭제.
+`~/.claude/settings.json`에서 `statusLine` 키를 지우고, `~/.claude/statusline.{ps1,sh}` 파일도 삭제하면 됩니다. 이전 버전을 쓰다가 업그레이드한 경우 `~/.claude/cost-tracker/` 디렉터리는 더 이상 쓰이지 않으니 삭제해도 무방.
 
 ## 라이선스
 

@@ -178,79 +178,17 @@ if [ "$durationMs" -gt 0 ]; then
     line2_parts+=("${C_DURATION}$(format_duration "$durationMs")${RESET}")
 fi
 
-# --- Cost tracking (per-model, one file per session) ---
-trackerDir="$HOME/.claude/cost-tracker"
-mkdir -p "$trackerDir" 2>/dev/null || true
-
-# Migrate legacy single-file tracker if present.
-# jq emits one entry per line with key + value as JSON; we read the key safely
-# (filename-validated) and write the value through jq's --argjson.
-legacyPath="$HOME/.claude/cost-tracker.json"
-if [ -f "$legacyPath" ]; then
-    while IFS= read -r entry; do
-        [ -z "$entry" ] && continue
-        key=$(printf '%s' "$entry" | jq -r '.key' 2>/dev/null)
-        case "$key" in
-            *[!A-Za-z0-9_-]*|"") continue ;;
-        esac
-        perFile="$trackerDir/${key}.json"
-        if [ ! -f "$perFile" ]; then
-            printf '%s' "$entry" | jq '.value' > "$perFile" 2>/dev/null || true
-        fi
-    done < <(jq -c 'to_entries[]' "$legacyPath" 2>/dev/null)
-    rm -f "$legacyPath"
-fi
-
-# Sanitize session_id — must be filename-safe (no path traversal)
-case "$sessionId" in
-    *[!A-Za-z0-9_-]*|"") sessionId="" ;;
-esac
-
-if [ -n "$sessionId" ] && [ "$sessionId" != "null" ]; then
-    ownPath="$trackerDir/${sessionId}.json"
-    if [ -f "$ownPath" ]; then
-        last_model=$(jq -r '.last_model // ""' "$ownPath")
-        last_cost=$(jq -r '.last_cost // 0' "$ownPath")
-    else
-        last_model="$model"
-        last_cost=0
-        jq -n --arg m "$model" '{last_model: $m, last_cost: 0, model_costs: {}}' > "$ownPath"
+# --- Monthly cumulative cost via ccusage ---
+# Optional: requires `ccusage` on PATH (`npm i -g ccusage`).
+# Shows API-equivalent cost across all Claude Code transcripts in
+# ~/.claude/projects/ for the current calendar month.
+if command -v ccusage >/dev/null 2>&1; then
+    current_month=$(date +%Y-%m)
+    monthly_cost=$(ccusage monthly --json 2>/dev/null \
+        | jq -r --arg m "$current_month" '.monthly[]? | select(.period==$m) | .totalCost' 2>/dev/null)
+    if [ -n "$monthly_cost" ] && [ "$monthly_cost" != "null" ]; then
+        line2_parts+=("${C_TOTAL}month \$$(printf '%.2f' "$monthly_cost")${RESET}")
     fi
-
-    delta=$(awk -v c="$sessionCost" -v l="$last_cost" 'BEGIN { printf "%.10f", c - l }')
-    delta_pos=$(awk -v d="$delta" 'BEGIN { print (d > 0) ? 1 : 0 }')
-
-    if [ "$delta_pos" = "1" ]; then
-        charged=$last_model
-        [ -z "$charged" ] && charged="$model"
-        jq --arg model "$model" \
-           --arg charged "$charged" \
-           --argjson cost "$sessionCost" \
-           --argjson delta "$delta" \
-           '.last_model = $model | .last_cost = $cost | .model_costs[$charged] = ((.model_costs[$charged] // 0) + $delta)' \
-           "$ownPath" > "${ownPath}.tmp" && mv "${ownPath}.tmp" "$ownPath"
-    else
-        jq --arg model "$model" --argjson cost "$sessionCost" \
-           '.last_model = $model | .last_cost = $cost' \
-           "$ownPath" > "${ownPath}.tmp" && mv "${ownPath}.tmp" "$ownPath"
-    fi
-fi
-
-# Aggregate per-model totals across all session files
-breakdown_json='{}'
-if compgen -G "$trackerDir/*.json" > /dev/null; then
-    breakdown_json=$(jq -s 'reduce .[].model_costs as $mc ({}; reduce ($mc | keys[]) as $k (.; .[$k] = (.[$k] // 0) + $mc[$k]))' "$trackerDir"/*.json 2>/dev/null || echo '{}')
-fi
-
-# Build sorted breakdown string
-breakdown=$(printf '%s' "$breakdown_json" | jq -r 'to_entries | sort_by(-.value) | map("\(.key) $\(.value | . * 100 | round / 100 | tostring)") | join(" / ")' 2>/dev/null)
-grand_total=$(printf '%s' "$breakdown_json" | jq -r '[.[]] | add // 0' 2>/dev/null)
-
-if [ -n "$breakdown" ] && [ "$breakdown" != "" ]; then
-    # Recolor the / separator to be subtle
-    colored=$(printf '%s' "$breakdown" | sed "s| / | ${SEP_DOT} ${C_COST}|g")
-    line2_parts+=("${C_COST}${colored}${RESET}")
-    line2_parts+=("${C_TOTAL}\$$(printf '%.2f' "$grand_total") total${RESET}")
 fi
 
 # Join line2 parts with separators

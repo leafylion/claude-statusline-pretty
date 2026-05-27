@@ -1,20 +1,19 @@
 # claude-statusline-pretty
 
-A pretty 2-line statusline for [Claude Code](https://claude.com/claude-code) with persistent per-model cost tracking.
+A pretty 2-line statusline for [Claude Code](https://claude.com/claude-code) with monthly cost tracking via [ccusage](https://github.com/ryoppippi/ccusage).
 
 ## What you get
 
 ```
 Sonnet 4.6 · "Customize statusline icons" · › myproject · ⎇ main
-effort:high · context 4% · cache 99% · 6m 56s · Sonnet $0.47 · Opus $0.12 · $0.59 total
+effort:high · context 4% · cache 99% · 6m 56s · month $42.18
 ```
 
 **Line 1** — model · session name · directory · git branch
-**Line 2** — effort · context % · cache hit % · session duration · per-model cost · grand total
+**Line 2** — effort · context % · cache hit % · session duration · current-month cost
 
 - **Color-coded context %** — calm at low usage, warmer as the window fills (4 themes bundled)
-- **Per-model cost tracking** — knows what you spent on Sonnet vs Opus, even when you switch mid-session
-- **Persistent across sessions** — `~/.claude/cost-tracker/<session_id>.json`, race-free for concurrent windows
+- **Monthly cost rollup** — current calendar-month API-equivalent spend across every Claude Code transcript on the machine, via `ccusage` (optional dependency)
 - **Cross-platform** — PowerShell for Windows, Bash + jq for macOS / Linux
 
 ## Install
@@ -24,6 +23,7 @@ effort:high · context 4% · cache 99% · 6m 56s · Sonnet $0.47 · Opus $0.12 �
 - **Windows:** PowerShell 5.1+ (built-in)
 - **macOS:** `jq` — install with `brew install jq`
 - **Linux:** `jq` — `sudo apt install jq` (Debian/Ubuntu) or `sudo dnf install jq` (Fedora)
+- **Optional (all platforms):** [`ccusage`](https://github.com/ryoppippi/ccusage) for the `month $X.XX` element — `npm i -g ccusage`. The statusline silently skips this element if `ccusage` is not on PATH.
 
 ### Steps
 
@@ -122,11 +122,9 @@ skills/install-statusline/       # /install-statusline command
 examples/themes/                 # JSON starters for custom palettes
 ```
 
-After install, the statusline auto-creates `~/.claude/cost-tracker/` on first run for per-session cost data.
-
 ## Uninstall
 
-Remove the `statusLine` key from `~/.claude/settings.json`, delete `~/.claude/statusline.{ps1,sh}`, and (optionally) delete `~/.claude/cost-tracker/`.
+Remove the `statusLine` key from `~/.claude/settings.json` and delete `~/.claude/statusline.{ps1,sh}`. If you upgraded from a pre-ccusage version, the legacy `~/.claude/cost-tracker/` directory is no longer used and can be deleted.
 
 ## License
 

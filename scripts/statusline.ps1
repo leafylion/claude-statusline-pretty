@@ -171,86 +171,20 @@ if ($durStr) {
     $line2 += "${C_DURATION}${durStr}${RESET}"
 }
 
-# --- Cost tracking (per-model, one file per session — race-free) ---
-$sessionId    = $data.session_id
-$sessionCost  = $data.cost.total_cost_usd
-$currentModel = $model
-
-# Sanitize session_id — must be filename-safe (no path traversal)
-if ($sessionId -and $sessionId -notmatch '^[A-Za-z0-9_-]+$') {
-    $sessionId = $null
-}
-
-$trackerDir = "$env:USERPROFILE\.claude\cost-tracker"
-if (-not (Test-Path $trackerDir)) {
-    try { New-Item -ItemType Directory -Path $trackerDir -Force | Out-Null } catch {}
-}
-
-# One-time migration from old single-file tracker
-$legacyPath = "$env:USERPROFILE\.claude\cost-tracker.json"
-if (Test-Path $legacyPath) {
+# --- Monthly cumulative cost via ccusage ---
+# Optional: requires `ccusage` on PATH (`npm i -g ccusage`).
+# Shows API-equivalent cost across all Claude Code transcripts in
+# ~/.claude/projects/ for the current calendar month.
+if (Get-Command ccusage -ErrorAction SilentlyContinue) {
     try {
-        $legacy = Get-Content $legacyPath -Raw | ConvertFrom-Json
-        $legacy.PSObject.Properties | ForEach-Object {
-            $perFile = Join-Path $trackerDir ("$($_.Name).json")
-            if (-not (Test-Path $perFile)) {
-                $_.Value | ConvertTo-Json -Depth 4 | Set-Content $perFile -Encoding utf8 -Force
-            }
-        }
-        Remove-Item $legacyPath -Force
-    } catch {}
-}
-
-# Update only THIS session's file
-$ownPath = Join-Path $trackerDir "$sessionId.json"
-$own = @{ last_model = $currentModel; last_cost = 0.0; model_costs = @{} }
-
-if ($sessionId -and (Test-Path $ownPath)) {
-    try {
-        $loaded = Get-Content $ownPath -Raw | ConvertFrom-Json
-        $mc = @{}
-        if ($loaded.model_costs) {
-            $loaded.model_costs.PSObject.Properties | ForEach-Object { $mc[$_.Name] = [double]$_.Value }
-        }
-        $own = @{
-            last_model  = [string]$loaded.last_model
-            last_cost   = [double]$loaded.last_cost
-            model_costs = $mc
+        $currentMonth = Get-Date -Format 'yyyy-MM'
+        $usage = ccusage monthly --json 2>$null | ConvertFrom-Json
+        $row = $usage.monthly | Where-Object { $_.period -eq $currentMonth }
+        if ($row -and $null -ne $row.totalCost) {
+            $monthCost = [double]$row.totalCost
+            $line2 += "${C_TOTAL}month `$$($monthCost.ToString('F2'))${RESET}"
         }
     } catch {}
-}
-
-if ($null -ne $sessionCost -and $sessionId) {
-    $delta = [double]$sessionCost - $own.last_cost
-    if ($delta -gt 0) {
-        $chargedModel = if ($own.last_model) { $own.last_model } else { $currentModel }
-        $own.model_costs[$chargedModel] = [double]($own.model_costs[$chargedModel]) + $delta
-    }
-    $own.last_model = $currentModel
-    $own.last_cost  = [double]$sessionCost
-
-    try { $own | ConvertTo-Json -Depth 4 | Set-Content $ownPath -Encoding utf8 -Force } catch {}
-}
-
-# Aggregate per-model totals by reading every session file
-$byModel = @{}
-Get-ChildItem -Path $trackerDir -Filter '*.json' -ErrorAction SilentlyContinue | ForEach-Object {
-    try {
-        $entry = Get-Content $_.FullName -Raw | ConvertFrom-Json
-        if ($entry.model_costs) {
-            $entry.model_costs.PSObject.Properties | ForEach-Object {
-                $byModel[$_.Name] = [double]($byModel[$_.Name]) + [double]$_.Value
-            }
-        }
-    } catch {}
-}
-
-if ($byModel.Count -gt 0) {
-    $grandTotal = ($byModel.Values | Measure-Object -Sum).Sum
-    $modelBreakdown = ($byModel.GetEnumerator() | Sort-Object Value -Descending |
-        ForEach-Object { "$($_.Key) `$$($_.Value.ToString('F2'))" }) -join " ${SEP_DOT} "
-    $line2 += "${C_COST}${modelBreakdown}${RESET}"
-    $line2 += "${C_TOTAL}`$$($grandTotal.ToString('F2')) total${RESET}"
 }
 
 # --- Render: 2 lines ---

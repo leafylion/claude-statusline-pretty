@@ -60,8 +60,8 @@ Show the installer's output to the user verbatim — it lists exactly which file
 ## What it does NOT do
 
 - Does not install `jq` for you (auto-install across distros is brittle)
+- Does not install `ccusage` (optional; the statusline silently skips the `month` element if missing)
 - Does not modify any other settings keys
-- Does not create the `cost-tracker/` directory — the statusline script does that on first run
 
 ## Changing theme/style later
 
