@@ -8,14 +8,16 @@ set -euo pipefail
 THEME='cool-pastel'
 STYLE='minimal'
 QUIET=""
+INSTALL_CCUSAGE=""
 
 while [ $# -gt 0 ]; do
     case "$1" in
         --theme) THEME="${2:-}"; shift 2 ;;
         --style) STYLE="${2:-}"; shift 2 ;;
         --quiet) QUIET=1; shift ;;
+        --install-ccusage) INSTALL_CCUSAGE=1; shift ;;
         --help|-h)
-            echo "Usage: install.sh [--theme <current|cool-pastel|earthy|neutral|custom>] [--style <minimal|sharp|soft>] [--quiet]"
+            echo "Usage: install.sh [--theme <current|cool-pastel|earthy|neutral|custom>] [--style <minimal|sharp|soft>] [--install-ccusage] [--quiet]"
             exit 0 ;;
         *) echo "Unknown option: $1" >&2; exit 1 ;;
     esac
@@ -107,6 +109,42 @@ else
 EOF
 fi
 log "[ok] Updated $SETTINGS"
+
+# Optional dependency: ccusage powers the monthly cumulative cost readout.
+# The statusline works fine without it (the cost line is simply hidden).
+install_ccusage() {
+    if command -v npm >/dev/null 2>&1; then
+        log "Installing ccusage via npm (npm i -g ccusage)..."
+        npm install -g ccusage && return 0
+        echo "[warn] npm install failed." >&2
+    fi
+    if command -v brew >/dev/null 2>&1; then
+        log "Installing ccusage via Homebrew (brew install ccusage)..."
+        brew install ccusage && return 0
+        echo "[warn] brew install failed." >&2
+    fi
+    echo "[warn] Could not install ccusage automatically (need npm or brew)." >&2
+    echo "       Install it manually with: npm i -g ccusage" >&2
+    return 1
+}
+
+if ! command -v ccusage >/dev/null 2>&1; then
+    if [ -n "$INSTALL_CCUSAGE" ]; then
+        install_ccusage || true
+    elif [ -z "$QUIET" ] && [ -t 0 ]; then
+        # Direct interactive run: ask. (When invoked by the skill this prompt is
+        # skipped — the skill asks the user and passes --install-ccusage instead.)
+        printf 'ccusage is not installed; it powers the monthly cost readout. Install now? [y/N] '
+        read -r reply || reply=""
+        case "$reply" in
+            [Yy]*) install_ccusage || true ;;
+            *) log '[note] Skipped. The monthly cost line stays hidden until ccusage is installed.' ;;
+        esac
+    else
+        log '[note] ccusage not found — the monthly cost line will be hidden.'
+        log '       Enable it later with: npm i -g ccusage   (or: brew install ccusage)'
+    fi
+fi
 
 log ''
 log 'Done. Restart Claude Code to see the new statusline.'

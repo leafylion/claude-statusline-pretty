@@ -8,6 +8,7 @@ param(
     [string]$Theme = 'cool-pastel',
     [ValidateSet('minimal','sharp','soft')]
     [string]$Style = 'minimal',
+    [switch]$InstallCcusage,
     [switch]$Quiet
 )
 
@@ -95,6 +96,34 @@ $json = $settings | ConvertTo-Json -Depth 20
 $utf8NoBom = New-Object System.Text.UTF8Encoding $false
 [System.IO.File]::WriteAllText($settingsPath, $json, $utf8NoBom)
 Log "[ok] Updated $settingsPath"
+
+# Optional dependency: ccusage powers the monthly cumulative cost readout.
+# The statusline works fine without it (the cost line is simply hidden).
+function Install-Ccusage {
+    if (Get-Command npm -ErrorAction SilentlyContinue) {
+        Log 'Installing ccusage via npm (npm i -g ccusage)...'
+        npm install -g ccusage
+        if ($LASTEXITCODE -eq 0) { return $true }
+        Write-Warning 'npm install failed.'
+    }
+    if (Get-Command winget -ErrorAction SilentlyContinue) {
+        Log 'Installing ccusage via winget...'
+        winget install --id ryoppippi.ccusage --accept-source-agreements --accept-package-agreements
+        if ($LASTEXITCODE -eq 0) { return $true }
+        Write-Warning 'winget install failed.'
+    }
+    Write-Warning 'Could not install ccusage automatically (need npm or winget). Install manually: npm i -g ccusage'
+    return $false
+}
+
+if (-not (Get-Command ccusage -ErrorAction SilentlyContinue)) {
+    if ($InstallCcusage) {
+        [void](Install-Ccusage)
+    } elseif (-not $Quiet) {
+        Log '[note] ccusage not found - the monthly cost line will be hidden.'
+        Log '       Enable it later with: npm i -g ccusage'
+    }
+}
 
 Log ''
 Log 'Done. Restart Claude Code to see the new statusline.'

@@ -27,20 +27,33 @@ Present the two choices below. **Defaults are `cool-pastel` + `minimal`** — if
 
 Accept short answers like just the theme name, or "default", or "1 / 2 / 3" matching the order presented.
 
-### 2. Detect OS and run the installer
+### 2. Offer to install ccusage (optional)
 
-Claude Code automatically adds the plugin's `bin/` directory to `PATH`, so call by name:
+`ccusage` powers the `month $X.XX` cumulative-cost element on line 2. The statusline works fine without it (that element is simply hidden). Check whether it's already available:
+
+```bash
+command -v ccusage   # Unix
+```
+```powershell
+Get-Command ccusage -ErrorAction SilentlyContinue   # Windows
+```
+
+If it is **missing**, ask the user whether to install it now. Only if they agree, pass the install flag in step 3 (`--install-ccusage` / `-InstallCcusage`). The installer installs it via `npm` (falling back to `brew` on Unix / `winget` on Windows) and never fails the install if ccusage can't be installed. If ccusage is already present, or the user declines, omit the flag.
+
+### 3. Detect OS and run the installer
+
+Claude Code automatically adds the plugin's `bin/` directory to `PATH`, so call by name. Append the ccusage flag only when the user opted in above:
 
 - **Windows** (PowerShell):
   ```powershell
-  install.ps1 -Theme <theme> -Style <style>
+  install.ps1 -Theme <theme> -Style <style> [-InstallCcusage]
   ```
 - **macOS / Linux**:
   ```bash
-  install.sh --theme <theme> --style <style>
+  install.sh --theme <theme> --style <style> [--install-ccusage]
   ```
 
-### 3. Report and restart
+### 4. Report and restart
 
 Show the installer's output to the user verbatim — it lists exactly which files were touched. Then tell them to **restart Claude Code**. The statusline command in `settings.json` is read at startup; it won't take effect in the current session.
 
@@ -56,11 +69,12 @@ Show the installer's output to the user verbatim — it lists exactly which file
 - Adds or replaces the `statusLine` key in `~/.claude/settings.json` (other keys preserved)
 - On Unix: marks the script executable
 - If `--theme custom` and `~/.claude/statusline-theme.json` doesn't already exist, seeds it from the bundled `cool-pastel` example so the user has a file to edit
+- With `--install-ccusage` / `-InstallCcusage`, installs `ccusage` if missing (via `npm`, falling back to `brew` / `winget`); non-fatal if it can't
 
 ## What it does NOT do
 
 - Does not install `jq` for you (auto-install across distros is brittle)
-- Does not install `ccusage` (optional; the statusline silently skips the `month` element if missing)
+- Does not install `ccusage` unless `--install-ccusage` is passed (optional; the statusline silently skips the `month` element if missing)
 - Does not modify any other settings keys
 
 ## Changing theme/style later
