@@ -4,6 +4,11 @@
 
 set -u
 
+# The statusline may be invoked with a minimal PATH (e.g. when Claude Code is
+# launched from the macOS app rather than a terminal), so prepend common tool
+# locations so `jq`/`ccusage` resolve regardless of how the app was started.
+export PATH="/opt/homebrew/bin:/usr/local/bin:/home/linuxbrew/.linuxbrew/bin:$HOME/.local/bin:$PATH"
+
 ESC=$'\033'
 fg() { printf '%s[38;5;%sm' "$ESC" "$1"; }
 RESET="${ESC}[0m"

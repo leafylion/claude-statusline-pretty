@@ -1,4 +1,11 @@
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
+# The statusline may be invoked with a minimal PATH (e.g. when Claude Code is
+# launched from the app rather than a terminal), so prepend the npm global bin
+# so `ccusage` resolves regardless of how the app was started.
+$npmBin = Join-Path $env:APPDATA 'npm'
+if (Test-Path $npmBin) { $env:PATH = "$npmBin;$env:PATH" }
+
 $ESC = [char]27
 
 function fg($n) { "$ESC[38;5;${n}m" }
@@ -95,12 +102,16 @@ function FormatDuration($ms) {
     return "${m}m ${s}s"
 }
 
-# Read stdin
-$lines = @()
+# Read stdin as UTF-8 explicitly. Claude Code pipes UTF-8 JSON which may contain
+# non-ASCII session names (e.g. Korean); reading via [Console]::In would decode
+# with the console's legacy code page on Windows PowerShell and corrupt them.
+$raw = ''
 try {
-    while ($null -ne ($line = [Console]::In.ReadLine())) { $lines += $line }
+    $stdin = [Console]::OpenStandardInput()
+    $reader = New-Object System.IO.StreamReader($stdin, [System.Text.UTF8Encoding]::new($false))
+    $raw = $reader.ReadToEnd()
+    $reader.Dispose()
 } catch {}
-$raw = $lines -join "`n"
 
 if (-not $raw.Trim()) {
     [Console]::Write("${C_MODEL}Claude${RESET}")
